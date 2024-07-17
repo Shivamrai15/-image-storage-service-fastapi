@@ -5,9 +5,10 @@ from fastapi.templating import Jinja2Templates
 import google.auth
 import google.oauth2.id_token
 from google.auth.transport import requests
-from google.cloud import firestore
+from google.cloud import firestore, storage
 import starlette.status as status
 from datetime import datetime
+import local_constants
 
 app = FastAPI()
 
@@ -56,12 +57,22 @@ def getUser(user_token):
 
 
 
+def addFile(file):
+    storage_client = storage.Client( project = local_constants.PROJECT_NAME )
+    bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
+    blob = storage.Blob(file.filename, bucket)
+    blob.upload_from_file(file.file)
+    blob.make_public()
+    return blob.public_url
+
+
 def getUserGalleries (userId):
     try:
         existedGalleries = firestore_db.collection('gallery').where('userId', "==", userId).get()
         return existedGalleries
     except:
         return []
+    
 
 
 @app.post("/create-gallery", response_class=HTMLResponse)
@@ -102,7 +113,14 @@ async def getGallery( request : Request, id:str ):
     if not user_token:
         return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
     
-    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token })
+    gallery = firestore_db.collection('gallery').document(id).get()
+    if not gallery.exists:
+        return RedirectResponse("/")
+
+    if gallery.get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+
+    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery })
 
 
 
@@ -179,3 +197,31 @@ async def deleteGallery ( request: Request, id: str ):
     gallery.delete()
 
     return RedirectResponse("/")
+
+
+@app.post("/upload/{id}", response_class=RedirectResponse)
+async def uploadImage ( request: Request, id: str ):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
+
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    gallery = firestore_db.collection('gallery').document(id)
+    if not gallery.get().exists:
+        return RedirectResponse("/")
+    
+    form = await request.form()
+    url = addFile(form['image'])
+
+    firestore_db.collection('images').document().set({
+        "image" : url,
+        "filename" : form['image'].filename,
+        "galleryId" : id,
+        "userId" : user_token['user_id'],
+        "createdAt" : datetime.now()
+    })
+    
+    return RedirectResponse(f"/gallery/{id}", status_code=status.HTTP_302_FOUND)

@@ -4,11 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gallery</title>
-    <script type="module" src="{{ url_for('static', path='/firebase-login.js') }}" ></script>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
 </head>
 <body>
-    <div>
-        
+    <div class="p-4">
+        <a class="back-btn" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            </svg>
+        </a>
+        <div class="container py-4">
+            <form action="/upload/{{ gallery.id }}" method="post" enctype="multipart/form-data" >
+                <h2>Upload Image</h2>
+                <div>
+                    <input type="file" name="image" accept="image/jpeg, image/png" required />
+                </div>
+                <button class="btn" type="submit" >
+                    Upload file
+                </button>
+            </form>
+        </div>
     </div>
 </body>
 </html>
