@@ -10,7 +10,7 @@
 <body>
     <div>
         <div class="container">
-            <div id="login-box" hidden="true" >
+            <div id="login-box" class="py-4" hidden="true" >
                 <h2>User Login/SignUp</h2>
                 <div>
                     <label for="email">Email</label>
@@ -31,9 +31,35 @@
                 </div>
             </div>
         </div>
-        <button class="primary-btn auto-width" id="sign-out" hidden="true" >
+        <button class="btn auto-width" id="sign-out" hidden="true" >
             LogOut 
         </button>
     </div>
+    {% if user_token %}
+        <hr>
+        <div class="container py-4">
+            <form action="/create-gallery" method="post">
+                <h2>Create Gallery</h2>
+                <div>
+                    <label for="name">Name</label>
+                    <input name="name" class="inp" id="name" />
+                </div>
+                <button class="btn" type="submit" >
+                    Create
+                </button>
+            </form>
+        </div>
+        {% if gallery %}
+            <div class="gallery">
+                {% for gal in gallery %}
+                    <div class="gallery-card">
+                        <a class="gal-name" href="" >
+                            {{ gal.get('name') }}
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
 </body>
 </html>
