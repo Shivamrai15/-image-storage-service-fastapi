@@ -74,6 +74,15 @@ def getUserGalleries (userId):
         return []
     
 
+def getGalleryImages ( galleryId : str ) :
+    try:
+        images = firestore_db.collection('images').where('galleryId', "==", galleryId).get()
+        if len(images) == 0:
+            return None
+        return images
+    except:
+        return None
+    
 
 @app.post("/create-gallery", response_class=HTMLResponse)
 async def createGallery( request:Request ):
@@ -104,7 +113,6 @@ async def createGallery( request:Request ):
 
 @app.get("/gallery/{id}")
 async def getGallery( request : Request, id:str ):
-    print(id)
     id_token = request.cookies.get("token")
     error_message = None
     user_token = None
@@ -119,8 +127,10 @@ async def getGallery( request : Request, id:str ):
 
     if gallery.get('userId') != user_token['user_id']:
         return RedirectResponse("/")
+    
+    images = getGalleryImages(galleryId=gallery.id)
 
-    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery })
+    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery, "images": images })
 
 
 

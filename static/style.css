@@ -110,3 +110,53 @@
     border-radius: 100%;
     margin: 2rem;
 }
+
+.images {
+    padding: 4rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    column-gap: 2rem;
+}
+
+.image-card {
+    height: 100%;
+    width: 100%;
+    border-radius: 10px;
+    aspect-ratio: 4/3;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #eaeaea;
+}
+
+.image-card img {
+    object-fit: contain;
+    object-position: center;
+}
+
+.warning {
+    padding-top: 6px;
+    padding-left: 12px;
+    padding-bottom: 6px;
+    padding-right: 12px;
+    background-color: #bcbcbc;
+    color: #363636;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 20px;
+}
+
+.header {
+    display: flex;
+    flex-direction: row;
+    row-gap: 1rem;
+    align-items: center;
+}
+
+.header div {
+    color: #c0005d;
+    font-size: 25px;
+    font-weight: 800;
+}
