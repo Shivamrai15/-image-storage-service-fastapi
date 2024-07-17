@@ -160,3 +160,27 @@
     font-size: 25px;
     font-weight: 800;
 }
+
+.delete-image {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+}
+
+.delete-image button {
+    color: red;
+    border: none;
+    background: #dbdbdbba;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.title {
+    padding-left: 4rem;
+    padding-right: 4rem;
+    font-size: 24px;
+    font-weight: 800;
+    color: #2e2e2e;
+}
+

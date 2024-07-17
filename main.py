@@ -235,3 +235,30 @@ async def uploadImage ( request: Request, id: str ):
     })
     
     return RedirectResponse(f"/gallery/{id}", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/delete-image/{id}", response_class=RedirectResponse)
+async def deleteImage( request: Request, id:str ):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
+
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    image = firestore_db.collection('images').document(id)
+    if not image.get().exists:
+        return RedirectResponse("/")
+    
+    if image.get().get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+    
+    galleryId = image.get().get("galleryId")
+    image.delete()
+
+    return RedirectResponse(f"/gallery/{galleryId}", status_code=status.HTTP_302_FOUND)
+
+
+
+    
