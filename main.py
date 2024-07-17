@@ -157,3 +157,25 @@ async def updateGallery( request : Request, id:str ):
     })
     
     return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
+
+
+@app.get("/gallery/delete/{id}", response_class=RedirectResponse)
+async def deleteGallery ( request: Request, id: str ):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
+
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    gallery = firestore_db.collection('gallery').document(id)
+    if not gallery.get().exists:
+        return RedirectResponse("/")
+
+    if gallery.get().get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+    
+    gallery.delete()
+
+    return RedirectResponse("/")
