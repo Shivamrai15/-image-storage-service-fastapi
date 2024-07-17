@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/style.css') }}">
+</head>
+<body>
+    
+    <div class="p-4">
+        <a class="back-btn" href="/">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+            </svg>
+        </a>
+        <div class="container py-4">
+            <form action="/gallery/update/{{ gallery.id }}" method="post">
+                <h2>Update Gallery</h2>
+                <div>
+                    <label for="name">Name</label>
+                    <input name="name" class="inp" id="name" value="{{ gallery.get('name') }}" />
+                </div>
+                <button class="btn" type="submit" >
+                    Update Name
+                </button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
