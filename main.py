@@ -9,6 +9,7 @@ from google.cloud import firestore, storage
 import starlette.status as status
 from datetime import datetime
 import local_constants
+import hashlib
 
 app = FastAPI()
 
@@ -29,6 +30,7 @@ async def root( request : Request ) :
     if not user_token:
         return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
     
+    getUser(user_token)
     gallery =  getUserGalleries(user_token['user_id'])
     return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : user_token , 'error_message' : error_message, "gallery" : gallery })
     
@@ -72,7 +74,7 @@ def getUserGalleries (userId):
         return existedGalleries
     except:
         return []
-    
+
 
 def getGalleryImages ( galleryId : str ) :
     try:
@@ -82,7 +84,16 @@ def getGalleryImages ( galleryId : str ) :
         return images
     except:
         return None
-    
+
+
+def imageHash (file):
+    hasher = hashlib.md5()
+    content = file.file.read()
+    hasher.update(content)
+    file.file.seek(0)
+    return hasher.hexdigest()
+
+
 
 @app.post("/create-gallery", response_class=HTMLResponse)
 async def createGallery( request:Request ):
@@ -129,8 +140,20 @@ async def getGallery( request : Request, id:str ):
         return RedirectResponse("/")
     
     images = getGalleryImages(galleryId=gallery.id)
-
-    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery, "images": images })
+    duplicates = set()
+    visited = set()
+    if images:
+        for image in images:
+            hash = image.get("hash")
+            if hash in visited:
+                duplicates.add(image)
+            else:
+                visited.add(hash)
+    
+    if len(duplicates) == 0:
+        duplicates = None
+    del(visited)
+    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery, "images": images, "duplicates": duplicates })
 
 
 
@@ -224,6 +247,7 @@ async def uploadImage ( request: Request, id: str ):
         return RedirectResponse("/")
     
     form = await request.form()
+    hash = imageHash(form['image'])
     url = addFile(form['image'])
 
     firestore_db.collection('images').document().set({
@@ -231,6 +255,7 @@ async def uploadImage ( request: Request, id: str ):
         "filename" : form['image'].filename,
         "galleryId" : id,
         "userId" : user_token['user_id'],
+        "hash" : hash,
         "createdAt" : datetime.now()
     })
     
