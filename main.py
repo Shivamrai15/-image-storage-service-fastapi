@@ -94,6 +94,22 @@ def imageHash (file):
     return hasher.hexdigest()
 
 
+def findDuplicates (images) :
+    duplicates = set()
+    visited = set()
+    if images:
+        for image in images:
+            hash = image.get("hash")
+            if hash in visited:
+                duplicates.add(image)
+            else:
+                visited.add(hash)
+    
+    if len(duplicates) == 0:
+        duplicates = None
+    del(visited)
+    return duplicates
+
 
 @app.post("/create-gallery", response_class=HTMLResponse)
 async def createGallery( request:Request ):
@@ -140,20 +156,26 @@ async def getGallery( request : Request, id:str ):
         return RedirectResponse("/")
     
     images = getGalleryImages(galleryId=gallery.id)
-    duplicates = set()
-    visited = set()
-    if images:
+    imagesOfEachGallery = firestore_db.collection("images").where("userId", "==", user_token['user_id']).get()
+    imagesList = []
+    for image in imagesOfEachGallery:
+        if image.get("galleryId") != id:
+            imagesList.append(image)
+
+    duplicates = findDuplicates(images)
+    entireDuplicates = set()
+    if images and len(imagesList) != 0:
+        imagesHash = set()
         for image in images:
-            hash = image.get("hash")
-            if hash in visited:
-                duplicates.add(image)
-            else:
-                visited.add(hash)
-    
-    if len(duplicates) == 0:
-        duplicates = None
-    del(visited)
-    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery, "images": images, "duplicates": duplicates })
+            imagesHash.add(image.get("hash"))
+        for image in imagesList:
+            if image.get("hash") in imagesHash:
+                entireDuplicates.add(image)
+
+    if len(entireDuplicates) == 0:
+        entireDuplicates = None
+
+    return templets.TemplateResponse('gallery.html', { 'request' : request, 'user_token': user_token, "gallery": gallery, "images": images, "duplicates": duplicates, "entireDuplicates": entireDuplicates })
 
 
 
