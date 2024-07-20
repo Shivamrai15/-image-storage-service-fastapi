@@ -143,7 +143,8 @@ async def createGallery( request:Request ):
         firestore_db.collection('gallery').document().set({
             "name" : form['name'],
             "userId" : user_token['user_id'],
-            "createdAt" : datetime.now()
+            "createdAt" : datetime.now(),
+            "allowedUsers" : []
         })
         return RedirectResponse("/", status_code=status.HTTP_302_FOUND)
     except Exception as e:
@@ -165,7 +166,7 @@ async def getGallery( request : Request, id:str ):
     if not gallery.exists:
         return RedirectResponse("/")
 
-    if gallery.get('userId') != user_token['user_id']:
+    if (gallery.get('userId') != user_token['user_id']) and ( user_token['email'] not in gallery.get("allowedUsers")  ) :
         return RedirectResponse("/")
     
     images = getGalleryImages(galleryId=gallery.id)
@@ -320,5 +321,77 @@ async def deleteImage( request: Request, id:str ):
     return RedirectResponse(f"/gallery/{galleryId}", status_code=status.HTTP_302_FOUND)
 
 
+@app.get("/share/{id}", response_class=HTMLResponse)
+async def sharePage(request: Request, id:str):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
 
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    gallery = firestore_db.collection('gallery').document(id).get()
+    if not gallery.exists:
+        return RedirectResponse("/")
+    
+    if gallery.get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+    
+
+    return templets.TemplateResponse('share.html', { 'request' : request, 'user_token': user_token, "gallery": gallery})
+
+
+
+@app.post("/share/allow/{id}", response_class=RedirectResponse)
+async def shareGallery( request: Request, id:str ):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
+
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    gallery = firestore_db.collection('gallery').document(id)
+    if not gallery.get().exists:
+        return RedirectResponse("/")
+    
+    if gallery.get().get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+    
+    form = await request.form()
+
+    allowedUsers = set(gallery.get().get("allowedUsers"))
+    allowedUsers.add(form['email'])
+    gallery.update({"allowedUsers": allowedUsers}) 
+
+    return RedirectResponse(f"/share/{id}", status_code=status.HTTP_302_FOUND)
+
+
+@app.post("/share/restrict/{id}", response_class=RedirectResponse)
+async def shareGallery( request: Request, id:str ):
+    id_token = request.cookies.get("token")
+    error_message = None
+    user_token = None
+    user_token = validateFirebaseToken(id_token)
+
+    if not user_token:
+        return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : None , 'error_message' : error_message, 'user_info': None })
+    
+    gallery = firestore_db.collection('gallery').document(id)
+    if not gallery.get().exists:
+        return RedirectResponse("/")
+    
+    if gallery.get().get('userId') != user_token['user_id']:
+        return RedirectResponse("/")
+    
+    form = await request.form()
+
+    allowedUsers = set(gallery.get().get("allowedUsers"))
+    if form['email'] in allowedUsers:
+        allowedUsers.remove(form['email'])
+        gallery.update({"allowedUsers": allowedUsers}) 
+
+    return RedirectResponse(f"/share/{id}", status_code=status.HTTP_302_FOUND)
     
