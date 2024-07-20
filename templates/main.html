@@ -53,6 +53,11 @@
             <div class="gallery">
                 {% for gal in gallery %}
                     <div class="gallery-card">
+                        <div class="gallery-img" >
+                            {% if galleryImages.get(gal.id) %}
+                                <img src='{{ galleryImages.get(gal.id) }}' alt="">
+                            {% endif %}
+                        </div>
                         <a class="gal-name" href="/gallery/{{ gal.id }}" >
                             {{ gal.get('name') }}
                         </a>

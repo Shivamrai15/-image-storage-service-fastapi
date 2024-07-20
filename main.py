@@ -32,7 +32,8 @@ async def root( request : Request ) :
     
     getUser(user_token)
     gallery =  getUserGalleries(user_token['user_id'])
-    return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : user_token , 'error_message' : error_message, "gallery" : gallery })
+    galleryImages = getGalleryFirstImages(gallery)
+    return templets.TemplateResponse('main.html', { 'request' : request, 'user_token' : user_token , 'error_message' : error_message, "gallery" : gallery, "galleryImages": galleryImages })
     
 
 def validateFirebaseToken(id_token):
@@ -58,7 +59,6 @@ def getUser(user_token):
     return user
 
 
-
 def addFile(file):
     storage_client = storage.Client( project = local_constants.PROJECT_NAME )
     bucket = storage_client.bucket(local_constants.PROJECT_STORAGE_BUCKET)
@@ -74,6 +74,19 @@ def getUserGalleries (userId):
         return existedGalleries
     except:
         return []
+
+
+def getGalleryFirstImages( galleries ):
+    
+    images = {}
+    if len(galleries) == 0:
+        return images
+    
+    for gallery in galleries:
+        image = firestore_db.collection('images').where("galleryId", "==", gallery.id).order_by("createdAt", "ASCENDING").limit(1).get()
+        if image:
+            images.update({ gallery.id: image[0].get("image") })
+    return images
 
 
 def getGalleryImages ( galleryId : str ) :
